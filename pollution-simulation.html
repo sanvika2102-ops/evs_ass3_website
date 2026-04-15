@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beyond the Tailpipe: The True Cost of Transport</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2E7D32;
+    --green-light: #4CAF50;
+    --green-glow: #66BB6A;
+    --blue: #00E5FF;
+    --blue-dim: #00ACC1;
+    --bg: #080c10;
+    --bg2: #0d1117;
+    --bg3: #111820;
+    --surface: #141c24;
+    --surface2: #1a2530;
+    --text: #e8f0fe;
+    --text-dim: #8899aa;
+    --petrol: #FF6B35;
+    --diesel: #FFC107;
+    --ev: #00E5FF;
+    --red: #ef5350;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--blue);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.15s ease, opacity 0.2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-trail {
+    width: 36px; height: 36px;
+    border: 1px solid var(--blue);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    transition: left 0.1s ease, top 0.1s ease;
+    opacity: 0.4;
+    mix-blend-mode: screen;
+  }
+
+  /* ---------- TYPOGRAPHY ---------- */
+  h1, h2, h3 { font-family: 'Syne', sans-serif; }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--blue);
+    opacity: 0.7;
+    margin-bottom: 1rem;
+  }
+
+  /* ---------- NOISE OVERLAY ---------- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9997;
+    opacity: 0.5;
+  }
+
+  /* ---------- NAV ---------- */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.2rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(8,12,16,0.95) 0%, transparent 100%);
+    backdrop-filter: blur(4px);
+  }
+  .nav-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--blue);
+    letter-spacing: 0.1em;
+  }
+  .nav-links {
+    display: flex; gap: 2rem; list-style: none;
+  }
+  .nav-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--blue); }
+
+  /* ---------- HERO ---------- */
+  #hero {
+    height: 100vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .hero-split {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .hero-left {
+    flex: 1;
+    background: linear-gradient(135deg, #1a0a00 0%, #2d1200 40%, #3d1f00 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-right {
+    flex: 1;
+    background: linear-gradient(135deg, #001a2d 0%, #002940 40%, #00152b 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Smog animation */
+  .smog-layer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60%;
+    background: linear-gradient(180deg, transparent 0%, rgba(100,70,20,0.4) 50%, rgba(80,50,10,0.6) 100%);
+    animation: smogDrift 8s ease-in-out infinite alternate;
+  }
+  @keyframes smogDrift {
+    0% { transform: translateX(-3%) scaleY(1); opacity: 0.7; }
+    100% { transform: translateX(3%) scaleY(1.1); opacity: 1; }
+  }
+
+  /* Cityscape SVG */
+  .city-scape {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+  }
+
+  /* Windmill */
+  .windmill-group {
+    position: absolute;
+    bottom: 15%;
+  }
+
+  /* Wind turbines */
+  .turbine {
+    position: absolute;
+    bottom: 0;
+  }
+  .turbine-blade {
+    transform-origin: center;
+    animation: rotateBlade 4s linear infinite;
+  }
+  @keyframes rotateBlade {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Stars */
+  .stars {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--d) ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
+
+  .hero-divider {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, var(--blue), transparent);
+    z-index: 2;
+  }
+  .hero-divider::after {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 0; bottom: 0;
+    width: 10px;
+    background: linear-gradient(180deg, transparent, rgba(0,229,255,0.15), transparent);
+    filter: blur(6px);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    max-width: 800px;
+    padding: 2rem;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--blue);
+    border: 1px solid rgba(0,229,255,0.3);
+    padding: 0.4rem 1.2rem;
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    animation: fadeUp 1s 0.2s both;
+  }
+
+  h1.hero-title {
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 1s 0.4s both;
+  }
+  .hero-title .accent-green { color: var(--green-glow); }
+  .hero-title .accent-blue { color: var(--blue); }
+
+  .hero-sub {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    line-height: 1.7;
+    animation: fadeUp 1s 0.6s both;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-authors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    animation: fadeUp 1s 0.8s both;
+  }
+
+  .author-chip {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    background: rgba(0,229,255,0.07);
+    border: 1px solid rgba(0,229,255,0.2);
+    padding: 0.3rem 0.8rem;
+    border-radius: 2px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    animation: bounce 2s infinite;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .scroll-hint::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(180deg, var(--blue), transparent);
+    margin: 0 auto 0.5rem;
+    animation: scrollLine 2s infinite;
+  }
+  @keyframes scrollLine {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(6px); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- SECTIONS ---------- */
+  section {
+    padding: 8rem 0;
+    position: relative;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .section-header {
+    margin-bottom: 4rem;
+  }
+
+  .section-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 5rem;
+    font-weight: 700;
+    color: rgba(0,229,255,0.04);
+    line-height: 1;
+    position: absolute;
+    top: 3rem;
+    right: 2rem;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  h2.section-title {
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+
+  .section-desc {
+    font-size: 1rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+    max-width: 600px;
+    font-weight: 300;
+  }
+
+  /* ---------- SECTION 1: Long Tailpipe ---------- */
+  #long-tailpipe {
+    background: var(--bg2);
+    overflow: hidden;
+  }
+
+  .node-canvas-wrapper {
+    position: relative;
+    height: 380px;
+    border: 1px solid rgba(0,229,255,0.08);
+    border-radius: 4px;
+    background: var(--bg3);
+    overflow: hidden;
+    margin-top: 3rem;
+  }
+
+  #nodeCanvas { width: 100%; height: 100%; }
+
+  .node-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .node-tab {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .node-tab.active {
+    background: rgba(0,229,255,0.08);
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  .node-tab:hover:not(.active) {
+    border-color: rgba(255,255,255,0.3);
+    color: var(--text);
+  }
+
+  .theory-box {
+    background: var(--surface);
+    border-left: 3px solid var(--blue);
+    padding: 1.5rem 2rem;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+  }
+  .theory-box strong { color: var(--text); }
+
+  /* ---------- SECTION 2: ICE Baseline ---------- */
+  #ice-baseline {
+    background: var(--bg);
+  }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .chart-box {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2rem;
+  }
+
+  .chart-box canvas { max-height: 320px; }
+
+  .stats-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 1.5rem;
+    transition: border-color 0.3s, transform 0.3s;
+    cursor: none;
+  }
+  .stat-card:hover {
+    border-color: rgba(0,229,255,0.3);
+    transform: translateX(4px);
+  }
+  .stat-card.petrol { border-left: 3px solid var(--petrol); }
+  .stat-card.diesel { border-left: 3px solid var(--diesel); }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+  .stat-value.petrol { color: var(--petrol); }
+  .stat-value.diesel { color: var(--diesel); }
+  .stat-formula {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .formula-block {
+    background: var(--surface2);
+    border: 1px solid rgba(0,229,255,0.1);
+    border-radius: 4px;
+    padding: 1rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--blue);
+    margin-top: 0.8rem;
+    overflow-x: auto;
+  }
+
+  /* ---------- SECTION 3: Battery Factor ---------- */
+  #battery-factor {
+    background: var(--bg2);
+    overflow: hidden;
+  }
+
+  .battery-viz {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    align-items: center;
+    margin-top: 3rem;
+  }
+
+  .battery-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .battery-svg-wrap {
+    position: relative;
+    width: 200px;
+  }
+
+  .battery-counter {
+    text-align: center;
+  }
+  .counter-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--red);
+    line-height: 1;
+  }
+  .counter-unit {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    margin-top: 0.3rem;
+  }
+  .counter-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+  }
+
+  .debt-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .debt-highlight {
+    background: var(--surface);
+    border: 1px solid rgba(239,83,80,0.3);
+    border-radius: 4px;
+    padding: 1.5rem;
+  }
+  .debt-highlight .big-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--red);
+  }
+  .debt-info {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-top: 0.5rem;
+  }
+
+  .amort-bar {
+    background: var(--surface);
+    border: 1px solid rgba(0,229,255,0.1);
+    border-radius: 4px;
+    padding: 1.5rem;
+  }
+  .amort-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+  .progress-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+  }
+
+  /* ---------- SECTION 4: Master Comparison ---------- */
+  #master-comparison {
+    background: var(--bg);
+  }
+
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+    margin-top: 3rem;
+  }
+
+  .bar-chart-box {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2rem;
+  }
+
+  /* Breakeven chart */
+  .breakeven-box {
+    background: var(--surface);
+    border: 1px solid rgba(0,229,255,0.1);
+    border-radius: 4px;
+    padding: 2rem;
+  }
+
+  .breakeven-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--blue);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  /* ---------- CO2 CALCULATOR ---------- */
+  #calculator {
+    background: var(--bg3);
+    border-top: 1px solid rgba(0,229,255,0.08);
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+    margin-top: 3rem;
+  }
+
+  .calc-form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .input-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .styled-input {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px;
+    padding: 0.8rem 1rem;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.3s;
+    cursor: none;
+    width: 100%;
+  }
+  .styled-input:focus { border-color: var(--blue); }
+
+  .styled-select {
+    appearance: none;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px;
+    padding: 0.8rem 1rem;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: none;
+    width: 100%;
+    transition: border-color 0.3s;
+  }
+  .styled-select:focus { border-color: var(--blue); }
+
+  .calc-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--green), #1b5e20);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 3px;
+    cursor: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 20px rgba(46,125,50,0.3);
+  }
+  .calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(46,125,50,0.5);
+  }
+
+  .calc-results { display: flex; flex-direction: column; gap: 1rem; }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 1.5rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .result-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .result-card.highlight {
+    border-color: rgba(0,229,255,0.3);
+    background: rgba(0,229,255,0.03);
+  }
+
+  .result-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--blue);
+  }
+  .result-desc {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 0.3rem;
+  }
+
+  /* ---------- SECTION 5: Future Work (Horizontal Scroll) ---------- */
+  #future-work {
+    background: var(--bg2);
+    overflow: hidden;
+  }
+
+  .hscroll-container {
+    display: flex;
+    gap: 2rem;
+    overflow-x: auto;
+    padding: 2rem 0 2rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--blue) transparent;
+    margin-top: 2rem;
+    cursor: grab;
+  }
+  .hscroll-container:active { cursor: grabbing; }
+  .hscroll-container::-webkit-scrollbar { height: 4px; }
+  .hscroll-container::-webkit-scrollbar-track { background: transparent; }
+  .hscroll-container::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 2px; }
+
+  .future-card {
+    flex: 0 0 320px;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .future-card:hover {
+    border-color: rgba(0,229,255,0.3);
+    transform: translateY(-4px);
+  }
+  .future-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .future-card.card-1::before { background: linear-gradient(90deg, var(--green), var(--blue)); }
+  .future-card.card-2::before { background: linear-gradient(90deg, var(--blue), #7b2ff7); }
+  .future-card.card-3::before { background: linear-gradient(90deg, #7b2ff7, var(--green)); }
+
+  .future-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+
+  .future-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.01em;
+  }
+
+  .future-card p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .status-badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2px;
+    margin-top: 1rem;
+  }
+  .badge-entering {
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.4);
+    color: var(--blue);
+    animation: pulseBadge 2s infinite;
+  }
+  @keyframes pulseBadge {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.3); }
+    50% { box-shadow: 0 0 0 4px rgba(0,229,255,0); }
+  }
+  .badge-research {
+    background: rgba(123,47,247,0.1);
+    border: 1px solid rgba(123,47,247,0.4);
+    color: #a78bfa;
+  }
+  .badge-emerging {
+    background: rgba(46,125,50,0.1);
+    border: 1px solid rgba(46,125,50,0.4);
+    color: var(--green-glow);
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    background: var(--bg3);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 4rem 0 2rem;
+  }
+
+  .footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 4rem;
+    margin-bottom: 4rem;
+  }
+
+  .footer-brand {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--blue);
+    margin-bottom: 1rem;
+  }
+
+  .footer-about {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .footer-heading {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  .footer-list { list-style: none; }
+  .footer-list li {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 0.3rem 0;
+    line-height: 1.5;
+  }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-copy {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ---------- SCROLL REVEAL ---------- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ---------- GLOWING LINE DECORATIONS ---------- */
+  .glow-line {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    opacity: 0.3;
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .chart-grid, .battery-viz, .comparison-grid, .calc-grid, .footer-grid {
+      grid-template-columns: 1fr;
+    }
+    h1.hero-title { font-size: 1.8rem; }
+    section { padding: 5rem 0; }
+  }
+
+  /* Tooltip */
+  .custom-tooltip {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid rgba(0,229,255,0.2);
+    padding: 0.8rem 1.2rem;
+    border-radius: 3px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.2s;
+    max-width: 250px;
+    line-height: 1.6;
+  }
+
+  /* MathJax overrides */
+  mjx-container { color: var(--blue) !important; }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+<div class="custom-tooltip" id="tooltip"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">ICE vs. EV // 2026</div>
+  <ul class="nav-links">
+    <li><a href="#long-tailpipe">The Grid</a></li>
+    <li><a href="#ice-baseline">ICE Data</a></li>
+    <li><a href="#battery-factor">Battery Debt</a></li>
+    <li><a href="#master-comparison">Comparison</a></li>
+    <li><a href="#calculator">Calculator</a></li>
+    <li><a href="#future-work">Future</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-split">
+    <!-- Left: Smoggy City -->
+    <div class="hero-left">
+      <div class="smog-layer"></div>
+      <svg class="city-scape" viewBox="0 0 550 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="150" width="60" height="150" fill="#1a0800" opacity="0.9"/>
+        <rect x="35" y="160" width="8" height="8" fill="#FF6B35" opacity="0.3"/>
+        <rect x="47" y="160" width="8" height="8" fill="#FF6B35" opacity="0.5"/>
+        <rect x="35" y="175" width="8" height="8" fill="#FF6B35" opacity="0.2"/>
+        <rect x="47" y="175" width="8" height="8" fill="#FF6B35" opacity="0.6"/>
+        <rect x="35" y="190" width="8" height="8" fill="#FF6B35" opacity="0.4"/>
+        <rect x="100" y="100" width="80" height="200" fill="#120600" opacity="0.95"/>
+        <rect x="108" y="110" width="10" height="10" fill="#FFC107" opacity="0.4"/>
+        <rect x="123" y="110" width="10" height="10" fill="#FFC107" opacity="0.2"/>
+        <rect x="138" y="110" width="10" height="10" fill="#FFC107" opacity="0.6"/>
+        <rect x="108" y="128" width="10" height="10" fill="#FFC107" opacity="0.5"/>
+        <rect x="123" y="128" width="10" height="10" fill="#FFC107" opacity="0.3"/>
+        <rect x="138" y="128" width="10" height="10" fill="#FFC107" opacity="0.4"/>
+        <rect x="108" y="146" width="10" height="10" fill="#FFC107" opacity="0.2"/>
+        <rect x="200" y="80" width="50" height="220" fill="#1a0800" opacity="0.9"/>
+        <rect x="205" y="90" width="8" height="8" fill="#FF6B35" opacity="0.5"/>
+        <rect x="218" y="90" width="8" height="8" fill="#FF6B35" opacity="0.3"/>
+        <rect x="231" y="90" width="8" height="8" fill="#FF6B35" opacity="0.6"/>
+        <rect x="260" y="120" width="70" height="180" fill="#120600" opacity="0.95"/>
+        <rect x="350" y="60" width="90" height="240" fill="#1a0800" opacity="0.9"/>
+        <rect x="358" y="75" width="12" height="12" fill="#FFC107" opacity="0.4"/>
+        <rect x="376" y="75" width="12" height="12" fill="#FFC107" opacity="0.5"/>
+        <rect x="394" y="75" width="12" height="12" fill="#FFC107" opacity="0.3"/>
+        <rect x="358" y="97" width="12" height="12" fill="#FFC107" opacity="0.6"/>
+        <!-- Smoke stacks -->
+        <rect x="160" y="50" width="12" height="60" fill="#2a1500" opacity="0.8"/>
+        <ellipse cx="166" cy="50" rx="8" ry="12" fill="rgba(120,80,20,0.5)"/>
+        <ellipse cx="166" cy="40" rx="12" ry="16" fill="rgba(100,60,10,0.4)"/>
+        <ellipse cx="163" cy="28" rx="16" ry="20" fill="rgba(80,50,10,0.3)"/>
+        <rect x="420" y="30" width="14" height="80" fill="#2a1500" opacity="0.8"/>
+        <ellipse cx="427" cy="30" rx="10" ry="14" fill="rgba(120,80,20,0.5)"/>
+        <ellipse cx="427" cy="16" rx="16" ry="20" fill="rgba(100,60,10,0.3)"/>
+        <!-- Cars/Road -->
+        <rect x="0" y="270" width="550" height="30" fill="#0a0600" opacity="0.9"/>
+        <rect x="50" y="283" width="30" height="8" fill="#FF6B35" opacity="0.3" rx="2"/>
+        <rect x="200" y="283" width="35" height="8" fill="#FFC107" opacity="0.3" rx="2"/>
+        <rect x="350" y="283" width="28" height="8" fill="#FF6B35" opacity="0.4" rx="2"/>
+      </svg>
+    </div>
+
+    <!-- Right: Wind Farm -->
+    <div class="hero-right">
+      <!-- Stars -->
+      <div class="stars" id="stars"></div>
+      <!-- Green hills -->
+      <svg style="position:absolute;bottom:0;left:0;right:0" viewBox="0 0 550 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,220 Q100,160 200,200 Q300,240 400,180 Q480,140 550,200 L550,300 L0,300 Z" fill="#0a1f0a" opacity="0.9"/>
+        <path d="M0,260 Q80,230 160,250 Q240,270 320,240 Q420,200 550,250 L550,300 L0,300 Z" fill="#071507" opacity="0.9"/>
+        <!-- Solar panels -->
+        <rect x="30" y="235" width="40" height="25" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.6" rx="1"/>
+        <line x1="30" y1="247" x2="70" y2="247" stroke="#00E5FF" stroke-width="0.5" opacity="0.4"/>
+        <line x1="50" y1="235" x2="50" y2="260" stroke="#00E5FF" stroke-width="0.5" opacity="0.4"/>
+        <rect x="80" y="237" width="40" height="25" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.5" rx="1"/>
+        <line x1="80" y1="249" x2="120" y2="249" stroke="#00E5FF" stroke-width="0.5" opacity="0.4"/>
+        <line x1="100" y1="237" x2="100" y2="262" stroke="#00E5FF" stroke-width="0.5" opacity="0.4"/>
+        <!-- Wind turbine towers -->
+        <line x1="300" y1="70" x2="300" y2="220" stroke="#1a3a1a" stroke-width="4"/>
+        <line x1="380" y1="100" x2="380" y2="230" stroke="#1a3a1a" stroke-width="3.5"/>
+        <line x1="460" y1="85" x2="460" y2="220" stroke="#1a3a1a" stroke-width="3"/>
+        <!-- Turbine blades are animated by JS -->
+        <g id="turbine1" transform="translate(300,70)">
+          <line x1="0" y1="0" x2="0" y2="-45" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="0" x2="39" y2="22" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="0" x2="-39" y2="22" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="0" cy="0" r="5" fill="#00E5FF" opacity="0.8"/>
+        </g>
+        <g id="turbine2" transform="translate(380,100)">
+          <line x1="0" y1="0" x2="0" y2="-38" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="0" x2="33" y2="19" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="0" x2="-33" y2="19" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="0" cy="0" r="4" fill="#00E5FF" opacity="0.8"/>
+        </g>
+        <g id="turbine3" transform="translate(460,85)">
+          <line x1="0" y1="0" x2="0" y2="-35" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="0" x2="30" y2="17" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <line x1="0" y1="0" x2="-30" y2="17" stroke="#2E7D32" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="0" cy="0" r="4" fill="#00E5FF" opacity="0.8"/>
+        </g>
+        <!-- Moon/glow -->
+        <circle cx="100" cy="60" r="25" fill="none" stroke="rgba(0,229,255,0.2)" stroke-width="1"/>
+        <circle cx="100" cy="60" r="18" fill="rgba(0,229,255,0.05)"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hero-divider"></div>
+
+  <div class="hero-content">
+    <div class="hero-tag">University Project · Lifecycle Analysis · 2026</div>
+    <h1 class="hero-title">
+      Beyond the <span class="accent-green">Tailpipe</span>:<br>
+      The True <span class="accent-blue">Cost</span> of Transport
+    </h1>
+    <p class="hero-sub">A lifecycle pollution simulation comparing Internal Combustion Engines<br>with Electric Vehicles across the full energy chain.</p>
+    <div class="hero-authors">
+      <span class="author-chip">Sanvika Ramireddy</span>
+      <span class="author-chip">Dharani Sree</span>
+      <span class="author-chip">Palak Lalwani</span>
+      <span class="author-chip">Shreya Singh</span>
+    </div>
+  </div>
+
+  <div class="scroll-hint">SCROLL</div>
+</section>
+
+<!-- SECTION 1: Long Tailpipe -->
+<section id="long-tailpipe">
+  <div class="container">
+    <div class="section-number">01</div>
+    <div class="section-header reveal">
+      <div class="section-label">Section 01 // The Theory</div>
+      <h2 class="section-title">The "Long <span style="color:var(--blue)">Tailpipe</span>" Problem</h2>
+      <p class="section-desc">EVs don't eliminate emissions — they relocate them. The real question is: what powers your grid?</p>
+    </div>
+
+    <div class="theory-box reveal">
+      <strong>The Critical Insight:</strong> When an EV charges, it draws power from the electrical grid. If that grid is fueled by coal, the EV is effectively powered by coal — just with the exhaust pipe moved to a distant power station. This is known as the "Long Tailpipe" theory. The environmental benefit of an EV is therefore directly tied to the <strong>cleanliness of the local electricity grid</strong>.
+    </div>
+
+    <div class="node-tabs reveal">
+      <button class="node-tab active" id="tab-coal" onclick="switchNodeScene('coal')">⚫ Coal Grid EV</button>
+      <button class="node-tab" id="tab-solar" onclick="switchNodeScene('solar')">☀️ Solar Grid EV</button>
+    </div>
+
+    <div class="node-canvas-wrapper reveal">
+      <canvas id="nodeCanvas"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: ICE Baseline -->
+<section id="ice-baseline">
+  <div class="container">
+    <div class="section-number">02</div>
+    <div class="section-header reveal">
+      <div class="section-label">Section 02 // The Baseline</div>
+      <h2 class="section-title">The ICE <span style="color:var(--petrol)">Baseline</span></h2>
+      <p class="section-desc">Before comparing, we must establish the status quo. Hover over the chart segments to see the underlying math.</p>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-box reveal">
+        <div class="section-label" style="margin-bottom:1.5rem">Emission Distribution (kg CO₂/year)</div>
+        <canvas id="iceChart"></canvas>
+        <p style="font-size:0.75rem;color:var(--text-dim);margin-top:1rem;text-align:center;font-family:'Space Mono',monospace">Hover segments for formula breakdown</p>
+      </div>
+      <div class="stats-panel reveal">
+        <div class="stat-card petrol" id="petrol-card"
+          data-tooltip="Formula: 12,000 km ÷ 15 km/L × 2.31 kg CO₂/L = 1,848 kg CO₂/year">
+          <div class="stat-label">⛽ Petrol Vehicle</div>
+          <div class="stat-value petrol">1,848 kg</div>
+          <div class="stat-formula">CO₂ per year · 53.5% share</div>
+          <div class="formula-block">\(12{,}000 \div 15 \times 2.31 = 1{,}848 \text{ kg}\)</div>
+        </div>
+        <div class="stat-card diesel" id="diesel-card"
+          data-tooltip="Formula: 12,000 km ÷ 17 km/L × 2.28 kg CO₂/L = 1,608 kg CO₂/year">
+          <div class="stat-label">🛢 Diesel Vehicle</div>
+          <div class="stat-value diesel">1,608 kg</div>
+          <div class="stat-formula">CO₂ per year · 46.5% share</div>
+          <div class="formula-block">\(12{,}000 \div 17 \times 2.28 = 1{,}608 \text{ kg}\)</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid rgba(255,255,255,0.06);border-radius:4px;padding:1.5rem;">
+          <div class="stat-label">🌡 Average ICE Emission Factor</div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--text)">~140 g/km</div>
+          <div style="font-size:0.8rem;color:var(--text-dim);margin-top:0.3rem">Weighted average across fuel types</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: Battery Factor -->
+<section id="battery-factor">
+  <div class="container">
+    <div class="section-number">03</div>
+    <div class="section-header reveal">
+      <div class="section-label">Section 03 // The Carbon Debt</div>
+      <h2 class="section-title">The <span style="color:var(--red)">Battery</span> Factor</h2>
+      <p class="section-desc">Every EV carries a hidden carbon burden from its manufacturing. It must "pay off" this debt through clean operation.</p>
+    </div>
+
+    <div class="battery-viz">
+      <div class="battery-container reveal">
+        <svg width="200" height="340" viewBox="0 0 200 340" id="batterySVG">
+          <!-- Battery outline -->
+          <rect x="30" y="30" width="140" height="280" rx="12" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+          <rect x="70" y="10" width="60" height="25" rx="6" fill="rgba(255,255,255,0.08)"/>
+          <!-- Fill segments -->
+          <clipPath id="battClip">
+            <rect x="34" y="34" width="132" height="272" rx="10"/>
+          </clipPath>
+          <rect id="battFill" x="34" y="306" width="132" height="0" rx="0" fill="url(#battGrad)" clip-path="url(#battClip)"/>
+          <defs>
+            <linearGradient id="battGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ef5350" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#b71c1c" stop-opacity="0.7"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines inside battery -->
+          <line x1="34" y1="102" x2="166" y2="102" stroke="rgba(255,255,255,0.04)" stroke-width="1" clip-path="url(#battClip)"/>
+          <line x1="34" y1="170" x2="166" y2="170" stroke="rgba(255,255,255,0.04)" stroke-width="1" clip-path="url(#battClip)"/>
+          <line x1="34" y1="238" x2="166" y2="238" stroke="rgba(255,255,255,0.04)" stroke-width="1" clip-path="url(#battClip)"/>
+          <!-- Border glow -->
+          <rect x="30" y="30" width="140" height="280" rx="12" fill="none" stroke="rgba(239,83,80,0.3)" stroke-width="1" id="battBorder"/>
+          <!-- Percent label -->
+          <text x="100" y="175" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Syne, sans-serif" font-size="28" font-weight="800" id="battPercent">0%</text>
+          <text x="100" y="198" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="Space Mono" font-size="10" id="battSub">MANUFACTURING</text>
+        </svg>
+
+        <div class="battery-counter">
+          <div class="counter-num" id="co2Counter">0</div>
+          <div class="counter-unit">kg CO₂ emitted</div>
+          <div class="counter-label">during battery manufacturing</div>
+        </div>
+      </div>
+
+      <div class="debt-panel">
+        <div class="debt-highlight reveal">
+          <div class="stat-label">Total Carbon Debt</div>
+          <div class="big-num">3,750 kg CO₂</div>
+          <div class="debt-info">A 75 kWh lithium-ion battery pack requires approximately <strong>3,750 kg of CO₂</strong> to manufacture, accounting for mining, refining, cell production, and assembly. This is the EV's "original sin" — a carbon debt it must amortize through clean driving.</div>
+        </div>
+
+        <div class="amort-bar reveal">
+          <div class="amort-label">Amortization over 150,000 km lifetime</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.8rem">
+            <span style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:var(--green-glow)">25 g/km</span>
+            <span style="font-size:0.8rem;color:var(--text-dim)">battery overhead</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="amortProgress" style="width:0%"></div>
+          </div>
+          <div class="progress-labels">
+            <span>0 km</span>
+            <span>150,000 km</span>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text-dim);margin-top:1rem">
+            \(3{,}750 \text{ kg} \div 150{,}000 \text{ km} = 25 \text{ g/km overhead}\)
+          </div>
+        </div>
+
+        <div class="amort-bar reveal">
+          <div class="amort-label">Manufacturing Carbon by Component</div>
+          <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem" id="componentBars"></div>
+        </div>
+
+        <div class="theory-box" style="margin-bottom:0">
+          The battery debt is <strong>front-loaded</strong>: the EV starts its life 3,750 kg "behind" an ICE vehicle. But every clean km driven chips away at this deficit. By ~75,000–100,000 km (depending on grid mix), the EV achieves <strong>lifetime carbon parity</strong> — then continues saving ~100+ g/km for the rest of its life.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: Master Comparison -->
+<section id="master-comparison">
+  <div class="container">
+    <div class="section-number">04</div>
+    <div class="section-header reveal">
+      <div class="section-label">Section 04 // The Verdict</div>
+      <h2 class="section-title">The Master <span style="color:var(--blue)">Comparison</span></h2>
+      <p class="section-desc">Full lifecycle emissions per kilometer — including the battery overhead. The breakeven crossover is where EVs surpass ICE vehicles permanently.</p>
+    </div>
+
+    <div class="comparison-grid">
+      <div class="bar-chart-box reveal">
+        <div class="section-label" style="margin-bottom:1.5rem">Lifecycle Emissions (g CO₂ / km)</div>
+        <canvas id="barChart" height="300"></canvas>
+      </div>
+      <div>
+        <div class="breakeven-box reveal">
+          <div class="breakeven-label">📈 Breakeven Crossover Chart</div>
+          <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:1rem;line-height:1.6">
+            Cumulative lifetime CO₂ emissions (kg). The moment the EV line crosses below the ICE line is the <strong style="color:var(--blue)">Carbon Parity Point</strong>.
+          </div>
+          <canvas id="breakevenChart" height="280"></canvas>
+          <div style="display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim)">
+              <div style="width:20px;height:2px;background:var(--petrol)"></div> PETROL
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim)">
+              <div style="width:20px;height:2px;background:var(--diesel)"></div> DIESEL
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim)">
+              <div style="width:20px;height:2px;background:var(--ev)"></div> RENEWABLE EV
+            </div>
+          </div>
+        </div>
+
+        <div class="theory-box reveal" style="margin-top:2rem">
+          <strong>Renewable EV: 29 g/km</strong><br>
+          Operational: ~4 g/km (renewables) + Battery amortization: 25 g/km = <strong style="color:var(--blue)">29 g/km total</strong>. This represents an <strong>80% reduction</strong> vs. petrol and a <strong>78% reduction</strong> vs. diesel — even with the full battery carbon debt included.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section id="calculator">
+  <div class="container">
+    <div class="section-number">CO₂</div>
+    <div class="section-header reveal">
+      <div class="section-label">Interactive Tool // Personalized</div>
+      <h2 class="section-title">Your <span style="color:var(--green-glow)">Carbon Debt</span> Calculator</h2>
+      <p class="section-desc">Enter your driving habits to calculate your personal CO₂ footprint and see your EV breakeven timeline.</p>
+    </div>
+
+    <div class="calc-grid">
+      <div class="calc-form reveal">
+        <div class="input-group">
+          <label class="input-label" for="annualDist">Annual Distance (km)</label>
+          <input type="number" id="annualDist" class="styled-input" value="12000" min="1000" max="100000" placeholder="e.g. 12000">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="vehicleType">Current Vehicle Type</label>
+          <select id="vehicleType" class="styled-select">
+            <option value="petrol">Petrol · 150 g/km lifecycle</option>
+            <option value="diesel">Diesel · 130 g/km lifecycle</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="gridMix">Your Grid Energy Mix</label>
+          <select id="gridMix" class="styled-select">
+            <option value="renewable">100% Renewable (Solar/Wind) · 4 g/km</option>
+            <option value="mixed">Mixed Grid (India avg.) · 85 g/km</option>
+            <option value="coal">Coal Dominated · 160 g/km</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="battSize">Battery Size (kWh)</label>
+          <input type="number" id="battSize" class="styled-input" value="75" min="20" max="200" placeholder="e.g. 75">
+        </div>
+        <button class="calc-btn" onclick="calculateCO2()">⚡ Calculate My Carbon Footprint</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div style="color:var(--text-dim);font-family:'Space Mono',monospace;font-size:0.75rem;opacity:0.5;padding-top:2rem">
+          Fill in your details and click Calculate →
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: Future Work -->
+<section id="future-work">
+  <div class="container">
+    <div class="section-number">05</div>
+    <div class="section-header reveal">
+      <div class="section-label">Section 05 // What's Next</div>
+      <h2 class="section-title">The Road <span style="color:var(--green-glow)">Ahead</span></h2>
+      <p class="section-desc">Emerging technologies that will reshape this analysis in the coming decade. Drag to scroll →</p>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:100%;padding-right:0">
+    <div class="hscroll-container reveal" id="hscroll">
+      <div style="padding-left:2rem;max-width:calc((100vw - 1100px)/2 + 2rem);min-width:2rem;flex:0 0 auto"></div>
+
+      <div class="future-card card-1">
+        <span class="future-icon">🔋</span>
+        <h3>Solid-State Batteries</h3>
+        <p>Next-generation batteries replace flammable liquid electrolytes with solid materials. The result: higher energy density, faster charging, longer lifespan, and critically — <strong>lower manufacturing carbon</strong> due to simpler chemistry and reduced need for cobalt.</p>
+        <span class="status-badge badge-entering">📡 2026 Status: Entering Market</span>
+      </div>
+
+      <div class="future-card card-2">
+        <span class="future-icon">⚡</span>
+        <h3>Vehicle-to-Grid (V2G)</h3>
+        <p>EVs become active participants in the grid. During peak demand, your car's battery feeds electricity back to the grid, stabilizing supply from intermittent renewables. This transforms EVs from energy consumers to distributed energy storage — fundamentally changing the grid math.</p>
+        <span class="status-badge badge-research">🔬 Status: Pilot Programs Active</span>
+      </div>
+
+      <div class="future-card card-3">
+        <span class="future-icon">🛣️</span>
+        <h3>Electric Roads (ERS)</h3>
+        <p>In-road wireless charging or pantograph systems allow EVs to charge while driving. Sweden and Germany are testing highway segments. If viable at scale, this eliminates the need for large battery packs, slashing the manufacturing carbon debt to near zero.</p>
+        <span class="status-badge badge-emerging">🌱 Status: Infrastructure Trials</span>
+      </div>
+
+      <div class="future-card card-1">
+        <span class="future-icon">☀️</span>
+        <h3>Green Hydrogen Hybrids</h3>
+        <p>Fuel cell vehicles that generate electricity from green hydrogen (produced via renewable-powered electrolysis) offer an alternative pathway. Zero operational emissions with a potentially lower manufacturing footprint than large battery packs.</p>
+        <span class="status-badge badge-research">🔬 Status: Early Commercial</span>
+      </div>
+
+      <div class="future-card card-2">
+        <span class="future-icon">♻️</span>
+        <h3>Battery Second-Life & Recycling</h3>
+        <p>Used EV batteries at 70-80% capacity are being repurposed as stationary grid storage. Advanced recycling recovers 95%+ of lithium, cobalt, and nickel. Second-life use dramatically reduces the effective manufacturing carbon per km by extending the battery's economic contribution.</p>
+        <span class="status-badge badge-entering">📡 2026 Status: Scaling Rapidly</span>
+      </div>
+
+      <div style="padding-right:2rem;min-width:2rem;flex:0 0 auto"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BEYOND THE TAILPIPE // ICE vs. EV</div>
+        <p class="footer-about">A lifecycle pollution simulation developed as a university project exploring the full environmental cost of transportation, from extraction to operation to end-of-life. All emissions data is based on peer-reviewed lifecycle assessment methodologies.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Research Team</div>
+        <ul class="footer-list">
+          <li>Sanvika Ramireddy</li>
+          <li>Dharani Sree</li>
+          <li>Palak Lalwani</li>
+          <li>Shreya Singh</li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Institution</div>
+        <ul class="footer-list">
+          <li><strong style="color:var(--text)">Jain (Deemed-to-be) University</strong></li>
+          <li style="margin-top:0.5rem">Faculty Advisor:</li>
+          <li><strong style="color:var(--blue)">Dr. Ghanashyam C.</strong></li>
+          <li style="margin-top:0.5rem;font-size:0.75rem;color:rgba(136,153,170,0.6)">AY 2025–2026</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 · Jain (Deemed-to-be) University · All data for educational purposes</div>
+      <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--green-glow)">🌱 Simulation · Not Financial or Policy Advice</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// CURSOR
+// ============================================================
+const cursor = document.getElementById('cursor');
+const trail = document.getElementById('cursorTrail');
+let mx = 0, my = 0, tx = 0, ty = 0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx - 6 + 'px';
+  cursor.style.top = my - 6 + 'px';
+});
+function animTrail() {
+  tx += (mx - tx) * 0.12;
+  ty += (my - ty) * 0.12;
+  trail.style.left = tx - 18 + 'px';
+  trail.style.top = ty - 18 + 'px';
+  requestAnimationFrame(animTrail);
+}
+animTrail();
+
+// ============================================================
+// STARS
+// ============================================================
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 60; i++) {
+  const s = document.createElement('div');
+  const sz = Math.random() * 2 + 0.5;
+  s.className = 'star';
+  s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s`;
+  starsEl.appendChild(s);
+}
+
+// ============================================================
+// TURBINE ROTATION (hero SVG turbines)
+// ============================================================
+let angle1=0, angle2=120, angle3=240;
+function rotateTurbines() {
+  angle1 = (angle1 + 0.4) % 360;
+  angle2 = (angle2 + 0.3) % 360;
+  angle3 = (angle3 + 0.5) % 360;
+  const t1 = document.getElementById('turbine1');
+  const t2 = document.getElementById('turbine2');
+  const t3 = document.getElementById('turbine3');
+  if(t1) t1.setAttribute('transform', `translate(300,70) rotate(${angle1})`);
+  if(t2) t2.setAttribute('transform', `translate(380,100) rotate(${angle2})`);
+  if(t3) t3.setAttribute('transform', `translate(460,85) rotate(${angle3})`);
+  requestAnimationFrame(rotateTurbines);
+}
+rotateTurbines();
+
+// ============================================================
+// TOOLTIP
+// ============================================================
+const tooltip = document.getElementById('tooltip');
+document.querySelectorAll('[data-tooltip]').forEach(el => {
+  el.addEventListener('mouseenter', e => {
+    tooltip.textContent = el.dataset.tooltip;
+    tooltip.style.opacity = '1';
+  });
+  el.addEventListener('mousemove', e => {
+    tooltip.style.left = e.clientX + 16 + 'px';
+    tooltip.style.top = e.clientY - 10 + 'px';
+  });
+  el.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+});
+
+// ============================================================
+// SCROLL REVEAL
+// ============================================================
+const revealEls = document.querySelectorAll('.reveal');
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+revealEls.forEach(el => revealObs.observe(el));
+
+// ============================================================
+// NODE CANVAS – Section 1
+// ============================================================
+const nodeCanvas = document.getElementById('nodeCanvas');
+const nctx = nodeCanvas.getContext('2d');
+let nodeScene = 'coal';
+
+function resizeNodeCanvas() {
+  nodeCanvas.width = nodeCanvas.offsetWidth;
+  nodeCanvas.height = nodeCanvas.offsetHeight;
+}
+resizeNodeCanvas();
+window.addEventListener('resize', resizeNodeCanvas);
+
+const nodes = {
+  coal: [
+    { x:0.12, y:0.5, label:'Coal\nPlant', color:'#888', icon:'🏭', size:30 },
+    { x:0.35, y:0.3, label:'Grid\nLine', color:'#aaa', icon:'⚡', size:18 },
+    { x:0.58, y:0.5, label:'Charging\nStation', color:'#aaa', icon:'🔌', size:22 },
+    { x:0.82, y:0.5, label:'EV\nCar', color:'#00E5FF', icon:'🚗', size:28 },
+  ],
+  solar: [
+    { x:0.12, y:0.5, label:'Solar\nFarm', color:'#FFD600', icon:'☀️', size:30 },
+    { x:0.35, y:0.3, label:'Clean\nGrid', color:'#4CAF50', icon:'⚡', size:18 },
+    { x:0.58, y:0.5, label:'Charging\nStation', color:'#4CAF50', icon:'🔌', size:22 },
+    { x:0.82, y:0.5, label:'EV\nCar', color:'#00E5FF', icon:'🚗', size:28 },
+  ]
+};
+
+const edges = [[0,1],[1,2],[2,3]];
+let nodeT = 0;
+
+function drawNodes() {
+  const w = nodeCanvas.width, h = nodeCanvas.height;
+  nctx.clearRect(0,0,w,h);
+
+  const scene = nodes[nodeScene];
+  const skyColor = nodeScene === 'coal'
+    ? `rgba(${Math.round(30 + nodeT*5)},${Math.round(20+nodeT*2)},${Math.round(10)},0.15)`
+    : `rgba(0,${Math.round(20+nodeT*5)},${Math.round(30+nodeT*8)},0.15)`;
+
+  // Sky gradient
+  const grad = nctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0, nodeScene==='coal' ? 'rgba(60,30,10,0.4)' : 'rgba(0,20,40,0.4)');
+  grad.addColorStop(1, 'rgba(10,12,18,0.1)');
+  nctx.fillStyle = grad;
+  nctx.fillRect(0,0,w,h);
+
+  // Smog overlay for coal
+  if(nodeScene === 'coal') {
+    const smog = nctx.createRadialGradient(w*0.12,h*0.5,10, w*0.5,h*0.4,w*0.6);
+    smog.addColorStop(0,'rgba(100,70,20,0.35)');
+    smog.addColorStop(1,'transparent');
+    nctx.fillStyle = smog;
+    nctx.fillRect(0,0,w,h);
+  }
+
+  // Draw edges with animated particles
+  edges.forEach(([a,b]) => {
+    const na = scene[a], nb = scene[b];
+    const x1=na.x*w, y1=na.y*h, x2=nb.x*w, y2=nb.y*h;
+    nctx.beginPath();
+    nctx.moveTo(x1,y1); nctx.lineTo(x2,y2);
+    nctx.strokeStyle = nodeScene==='coal' ? 'rgba(150,120,60,0.3)' : 'rgba(0,229,255,0.2)';
+    nctx.lineWidth = 2;
+    nctx.stroke();
+
+    // Particle
+    const t = (nodeT*0.008 % 1);
+    const px = x1 + (x2-x1)*t;
+    const py = y1 + (y2-y1)*t;
+    nctx.beginPath();
+    nctx.arc(px,py,5,0,Math.PI*2);
+    nctx.fillStyle = nodeScene==='coal' ? '#FFC107' : '#00E5FF';
+    nctx.shadowColor = nodeScene==='coal' ? '#FFC107' : '#00E5FF';
+    nctx.shadowBlur = 12;
+    nctx.fill();
+    nctx.shadowBlur = 0;
+  });
+
+  // Draw nodes
+  scene.forEach((node, i) => {
+    const x = node.x*w, y = node.y*h;
+    const sz = node.size;
+    nctx.beginPath();
+    nctx.arc(x,y,sz,0,Math.PI*2);
+    nctx.fillStyle = 'rgba(13,17,23,0.8)';
+    nctx.fill();
+    nctx.strokeStyle = node.color;
+    nctx.lineWidth = 2;
+    nctx.stroke();
+    // Glow
+    nctx.beginPath();
+    nctx.arc(x,y,sz+4,0,Math.PI*2);
+    nctx.strokeStyle = node.color;
+    nctx.globalAlpha = 0.15 + 0.1*Math.sin(nodeT*0.03+i);
+    nctx.lineWidth = 8;
+    nctx.stroke();
+    nctx.globalAlpha = 1;
+    // Icon
+    nctx.font = `${sz*0.85}px serif`;
+    nctx.textAlign = 'center';
+    nctx.textBaseline = 'middle';
+    nctx.fillText(node.icon, x, y);
+    // Label
+    nctx.font = '11px "Space Mono", monospace';
+    nctx.fillStyle = node.color;
+    nctx.textBaseline = 'top';
+    const lines = node.label.split('\n');
+    lines.forEach((line, li) => {
+      nctx.fillText(line, x, y+sz+8+li*14);
+    });
+  });
+
+  // Status text
+  nctx.font = '12px "Space Mono", monospace';
+  nctx.fillStyle = nodeScene==='coal' ? '#FFC107' : '#4CAF50';
+  nctx.textAlign = 'left';
+  nctx.textBaseline = 'top';
+  const statusText = nodeScene==='coal'
+    ? '⚫ Coal Grid: ~820 g CO₂/kWh → ~160 g/km EV emission'
+    : '☀️ Solar Grid: ~41 g CO₂/kWh → ~4 g/km EV emission';
+  nctx.fillText(statusText, 20, 16);
+
+  nodeT++;
+  requestAnimationFrame(drawNodes);
+}
+drawNodes();
+
+function switchNodeScene(scene) {
+  nodeScene = scene;
+  document.getElementById('tab-coal').classList.toggle('active', scene==='coal');
+  document.getElementById('tab-solar').classList.toggle('active', scene==='solar');
+}
+
+// ============================================================
+// ICE PIE CHART – Section 2
+// ============================================================
+const iceCtx = document.getElementById('iceChart').getContext('2d');
+const iceChart = new Chart(iceCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Petrol (53.5%)', 'Diesel (46.5%)'],
+    datasets: [{
+      data: [1848, 1608],
+      backgroundColor: ['rgba(255,107,53,0.85)', 'rgba(255,193,7,0.85)'],
+      borderColor: ['#FF6B35', '#FFC107'],
+      borderWidth: 2,
+      hoverBackgroundColor: ['rgba(255,107,53,1)', 'rgba(255,193,7,1)'],
+      hoverBorderWidth: 3,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '60%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: '#8899aa', font: { family: 'Space Mono', size: 10 }, padding: 16 }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const formulas = [
+              ['1,848 kg CO₂/year', '12,000 ÷ 15 km/L × 2.31 kg/L'],
+              ['1,608 kg CO₂/year', '12,000 ÷ 17 km/L × 2.28 kg/L']
+            ];
+            const f = formulas[ctx.dataIndex];
+            return [f[0], 'Formula: ' + f[1]];
+          }
+        },
+        backgroundColor: '#141c24',
+        borderColor: 'rgba(0,229,255,0.2)',
+        borderWidth: 1,
+        titleColor: '#e8f0fe',
+        bodyColor: '#8899aa',
+        titleFont: { family: 'Syne' },
+        bodyFont: { family: 'Space Mono', size: 10 },
+        padding: 12
+      }
+    }
+  }
+});
+
+// ============================================================
+// BATTERY ANIMATION – Section 3
+// ============================================================
+let battAnimated = false;
+const battObs = new IntersectionObserver((entries) => {
+  if(entries[0].isIntersecting && !battAnimated) {
+    battAnimated = true;
+    animateBattery();
+    animateAmort();
+    buildComponentBars();
+  }
+}, { threshold: 0.3 });
+battObs.observe(document.getElementById('battery-factor'));
+
+function animateBattery() {
+  const target = 3750;
+  const counter = document.getElementById('co2Counter');
+  const fill = document.getElementById('battFill');
+  const pct = document.getElementById('battPercent');
+  const border = document.getElementById('battBorder');
+  let current = 0;
+  const duration = 2800;
+  const start = performance.now();
+
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    current = Math.round(eased * target);
+    counter.textContent = current.toLocaleString();
+    const fillH = 272 * eased;
+    fill.setAttribute('height', fillH);
+    fill.setAttribute('y', 306 - fillH);
+    const p = Math.round(eased * 100);
+    pct.textContent = p + '%';
+    border.setAttribute('stroke', `rgba(239,83,80,${0.3 + eased * 0.7})`);
+    if(progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function animateAmort() {
+  const bar = document.getElementById('amortProgress');
+  setTimeout(() => {
+    bar.style.width = '100%';
+  }, 500);
+}
+
+function buildComponentBars() {
+  const components = [
+    { label: 'Cell Manufacturing', pct: 40, color: 'var(--red)', kg: 1500 },
+    { label: 'Raw Material Mining', pct: 30, color: '#FF8A65', kg: 1125 },
+    { label: 'Assembly & Logistics', pct: 20, color: '#FFC107', kg: 750 },
+    { label: 'Electrode Processing', pct: 10, color: '#66BB6A', kg: 375 },
+  ];
+  const container = document.getElementById('componentBars');
+  components.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-dim)">${c.label}</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.6rem;color:${c.color}">${c.kg} kg</span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-bottom:6px">
+        <div style="height:100%;width:0%;background:${c.color};border-radius:3px;transition:width 1.5s ${i*0.2}s cubic-bezier(0.4,0,0.2,1)" class="comp-bar-fill" data-w="${c.pct}"></div>
+      </div>`;
+    container.appendChild(div);
+    setTimeout(() => {
+      div.querySelector('.comp-bar-fill').style.width = c.pct + '%';
+    }, 100 + i*200);
+  });
+}
+
+// ============================================================
+// BAR CHART – Section 4
+// ============================================================
+let barAnimated = false;
+const barObs = new IntersectionObserver((entries) => {
+  if(entries[0].isIntersecting && !barAnimated) {
+    barAnimated = true;
+    renderBarChart();
+    renderBreakevenChart();
+  }
+}, { threshold: 0.3 });
+barObs.observe(document.getElementById('master-comparison'));
+
+function renderBarChart() {
+  const ctx = document.getElementById('barChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Petrol ICE', 'Diesel ICE', 'Renewable EV'],
+      datasets: [{
+        label: 'g CO₂ / km',
+        data: [150, 130, 29],
+        backgroundColor: [
+          'rgba(255,107,53,0.8)',
+          'rgba(255,193,7,0.8)',
+          'rgba(0,229,255,0.8)'
+        ],
+        borderColor: ['#FF6B35','#FFC107','#00E5FF'],
+        borderWidth: 2,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 1500, easing: 'easeOutQuart' },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 180,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#8899aa', font: { family: 'Space Mono', size: 10 }, callback: v => v + 'g' }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#e8f0fe', font: { family: 'Syne', size: 11, weight: '600' } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141c24',
+          borderColor: 'rgba(0,229,255,0.2)',
+          borderWidth: 1,
+          titleColor: '#e8f0fe',
+          bodyColor: '#8899aa',
+          titleFont: { family: 'Syne' },
+          bodyFont: { family: 'Space Mono', size: 10 },
+          padding: 12,
+          callbacks: {
+            afterBody: (ctx) => {
+              const notes = [
+                ['Includes: combustion (120) + fuel chain (30)'],
+                ['Includes: combustion (105) + fuel chain (25)'],
+                ['Includes: operation (4) + battery amort. (25)']
+              ];
+              return notes[ctx[0].dataIndex];
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderBreakevenChart() {
+  const ctx = document.getElementById('breakevenChart').getContext('2d');
+  // Cumulative emissions: ICE starts at 0, EV starts at 3750 kg debt
+  const kmPoints = [0,20,40,60,80,100,120,150]; // thousands of km
+  const labels = kmPoints.map(k => k+'k');
+
+  const petrolData = kmPoints.map(k => k * 1000 * 0.150); // 150g/km in kg
+  const dieselData = kmPoints.map(k => k * 1000 * 0.130);
+  // EV: 3750 kg initial + 29g/km operational
+  const evData = kmPoints.map(k => 3750 + k * 1000 * 0.029);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Petrol ICE',
+          data: petrolData,
+          borderColor: '#FF6B35',
+          backgroundColor: 'rgba(255,107,53,0.05)',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: '#FF6B35',
+          tension: 0.3,
+          fill: false,
+        },
+        {
+          label: 'Diesel ICE',
+          data: dieselData,
+          borderColor: '#FFC107',
+          backgroundColor: 'rgba(255,193,7,0.05)',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: '#FFC107',
+          tension: 0.3,
+          fill: false,
+        },
+        {
+          label: 'Renewable EV',
+          data: evData,
+          borderColor: '#00E5FF',
+          backgroundColor: 'rgba(0,229,255,0.05)',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: '#00E5FF',
+          tension: 0.3,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 1800, easing: 'easeOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#8899aa', font: { family: 'Space Mono', size: 9 }, callback: v => (v/1000).toFixed(0) + 't' }
+        },
+        x: {
+          grid: { color: 'rgba(255,255,255,0.03)' },
+          ticks: { color: '#8899aa', font: { family: 'Space Mono', size: 9 } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141c24',
+          borderColor: 'rgba(0,229,255,0.2)',
+          borderWidth: 1,
+          titleColor: '#e8f0fe',
+          bodyColor: '#8899aa',
+          titleFont: { family: 'Syne' },
+          bodyFont: { family: 'Space Mono', size: 10 },
+          padding: 10,
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${(ctx.parsed.y/1000).toFixed(1)} tonnes CO₂`
+          }
+        },
+        annotation: {}
+      }
+    },
+    plugins: [{
+      id: 'breakevenLine',
+      afterDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        // Find crossover approx between petrol and EV
+        // 3750 + 0.029*km = 0.150*km → km = 3750/0.121 ≈ 31,000
+        const crossoverKm = 3750 / (0.150 - 0.029); // ~31,000 km
+        const crossoverX = x.getPixelForValue(crossoverKm/20000); // rough scale
+        
+        // Draw vertical annotation at ~40k km (index 2)
+        const xPix = x.getPixelForValue(2); // 40k label
+        const yTop = y.top;
+        const yBot = y.bottom;
+        
+        ctx.save();
+        ctx.setLineDash([4,4]);
+        ctx.strokeStyle = 'rgba(0,229,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(xPix, yTop);
+        ctx.lineTo(xPix, yBot);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#00E5FF';
+        ctx.font = '9px "Space Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('BREAKEVEN', xPix, yTop + 12);
+        ctx.fillText('~40k km', xPix, yTop + 24);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ============================================================
+// CO2 CALCULATOR
+// ============================================================
+function calculateCO2() {
+  const dist = parseFloat(document.getElementById('annualDist').value) || 12000;
+  const vehicle = document.getElementById('vehicleType').value;
+  const grid = document.getElementById('gridMix').value;
+  const battKwh = parseFloat(document.getElementById('battSize').value) || 75;
+
+  const iceGkm = vehicle === 'petrol' ? 150 : 130;
+  const gridGkm = { renewable: 4, mixed: 85, coal: 160 }[grid];
+  const battDebt = battKwh * 50; // ~50 kg CO2 per kWh for manufacturing
+  const battAmortGkm = battDebt / 150000;
+  const evTotalGkm = gridGkm + battAmortGkm;
+
+  const iceAnnual = (dist * iceGkm / 1000).toFixed(0);
+  const evAnnual = (dist * evTotalGkm / 1000).toFixed(0);
+  const saving = (iceAnnual - evAnnual).toFixed(0);
+  const savingPct = ((1 - evAnnual/iceAnnual) * 100).toFixed(0);
+
+  // Breakeven in km
+  const breakevenKm = battDebt / ((iceGkm - evTotalGkm) / 1000);
+  const breakevenYears = (breakevenKm / dist).toFixed(1);
+
+  const container = document.getElementById('calcResults');
+  container.innerHTML = `
+    <div class="result-card" id="rc1">
+      <div class="stat-label">Your ICE Footprint</div>
+      <div class="result-val" style="color:var(--petrol)">${Number(iceAnnual).toLocaleString()} kg</div>
+      <div class="result-desc">CO₂ per year at ${dist.toLocaleString()} km/year · ${iceGkm} g/km</div>
+    </div>
+    <div class="result-card" id="rc2">
+      <div class="stat-label">Your EV Footprint (${grid} grid)</div>
+      <div class="result-val" style="color:var(--blue)">${Number(evAnnual).toLocaleString()} kg</div>
+      <div class="result-desc">CO₂ per year · ${evTotalGkm.toFixed(1)} g/km total (${gridGkm} operational + ${battAmortGkm.toFixed(1)} battery amort.)</div>
+    </div>
+    <div class="result-card highlight" id="rc3">
+      <div class="stat-label">Annual Saving with EV</div>
+      <div class="result-val" style="color:var(--green-glow)">${Number(saving).toLocaleString()} kg</div>
+      <div class="result-desc">That's a <strong style="color:var(--green-glow)">${savingPct}% reduction</strong> in annual CO₂ emissions</div>
+    </div>
+    <div class="result-card" id="rc4">
+      <div class="stat-label">Carbon Debt Payoff Point</div>
+      <div class="result-val" style="color:var(--blue)">${breakevenYears} years</div>
+      <div class="result-desc">≈ ${Math.round(breakevenKm).toLocaleString()} km · Battery debt: ${battDebt.toLocaleString()} kg CO₂</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid rgba(0,229,255,0.08);border-radius:4px;padding:1rem;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--text-dim);line-height:1.8">
+      \\(${dist.toLocaleString()} \\text{ km} \\times ${evTotalGkm.toFixed(1)} \\text{ g/km} \\div 1000 = ${evAnnual} \\text{ kg CO}_2\\text{/yr}\\)
+    </div>
+  `;
+
+  ['rc1','rc2','rc3','rc4'].forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if(el) el.classList.add('visible');
+    }, i * 120);
+  });
+
+  if(window.MathJax) MathJax.typesetPromise();
+}
+
+// ============================================================
+// HORIZONTAL SCROLL DRAG
+// ============================================================
+const hscroll = document.getElementById('hscroll');
+let isDown = false, startX, scrollLeft;
+hscroll.addEventListener('mousedown', e => {
+  isDown = true;
+  startX = e.pageX - hscroll.offsetLeft;
+  scrollLeft = hscroll.scrollLeft;
+});
+hscroll.addEventListener('mouseleave', () => isDown = false);
+hscroll.addEventListener('mouseup', () => isDown = false);
+hscroll.addEventListener('mousemove', e => {
+  if(!isDown) return;
+  e.preventDefault();
+  const x = e.pageX - hscroll.offsetLeft;
+  hscroll.scrollLeft = scrollLeft - (x - startX);
+});
+
+// ============================================================
+// MATHJAX TRIGGER
+// ============================================================
+window.addEventListener('load', () => {
+  if(window.MathJax) MathJax.typesetPromise();
+});
+</script>
+</body>
+</html>
